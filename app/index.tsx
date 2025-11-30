@@ -141,24 +141,46 @@ export default function Index() {
   const buttonPulseAnim = useRef(new Animated.Value(1)).current;
   const particleAnim = useRef(new Animated.Value(0)).current;
 
+  // Refs para el estado del dibujo y lógica para evitar recrear el PanResponder
+  const drawingPointsRef = useRef<Point[]>([]);
+  const handleCompleteRef = useRef(handleLetterComplete);
+
+  // Actualizar el ref de la función en cada render
+  useEffect(() => {
+    handleCompleteRef.current = handleLetterComplete;
+  }, [handleLetterComplete]);
+
   // Configuración del PanResponder para dibujar
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      // Iniciar nuevo trazo
-    },
-    onPanResponderMove: (evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+    onPanResponderGrant: (evt) => {
       const { locationX, locationY } = evt.nativeEvent;
-      setDrawingPoints(prev => [...prev, { x: locationX, y: locationY }]);
+      const startPoint = { x: locationX, y: locationY };
+      drawingPointsRef.current = [startPoint];
+      setDrawingPoints([startPoint]);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      const newPoint = { x: locationX, y: locationY };
+
+      // Agregar punto al ref
+      drawingPointsRef.current.push(newPoint);
+
+      // Actualizar estado para renderizar (esto causará re-render, pero PanResponder no se recreará)
+      setDrawingPoints(prev => [...prev, newPoint]);
     },
     onPanResponderRelease: () => {
-      // Verificar si se ha dibujado suficiente
-      if (drawingPoints.length > 20) {
-        handleLetterComplete();
+      // Verificar si se ha dibujado suficiente usando el ref
+      if (drawingPointsRef.current.length > 20) {
+        handleCompleteRef.current();
       }
     },
-  }), [drawingPoints]);
+    onPanResponderTerminate: () => {
+      // Limpiar si el gesto es cancelado
+      // Opcional: setDrawingPoints([]);
+    }
+  }), []); // Sin dependencias para mantener la instancia estable durante el gesto
 
   useEffect(() => {
     console.log("App mounted, screen:", screen);
@@ -499,7 +521,15 @@ export default function Index() {
             <Text style={[styles.drawAreaText, { color: theme.primary }]}>¡Dibuja aquí!</Text>
 
             <View
-              style={[styles.drawArea, isWeb && { cursor: 'crosshair' }, { borderColor: theme.primary }]}
+              style={[
+                styles.drawArea,
+                isWeb && {
+                  cursor: 'crosshair',
+                  userSelect: 'none',
+                  touchAction: 'none'
+                } as any,
+                { borderColor: theme.primary }
+              ]}
               {...panResponder.panHandlers}
               ref={drawingAreaRef}
               onLayout={(e) => setDrawingAreaLayout(e.nativeEvent.layout)}
