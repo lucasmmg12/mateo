@@ -491,6 +491,14 @@ export default function Index() {
 
       <View style={styles.gameContainer}>
 
+        {/* Avatares laterales */}
+        <View style={styles.sideAvatarLeft}>
+          <Image source={avatar} style={styles.sideAvatarImage} resizeMode="cover" />
+        </View>
+        <View style={styles.sideAvatarRight}>
+          <Image source={avatar} style={styles.sideAvatarImage} resizeMode="cover" />
+        </View>
+
         {/* Header del Nivel */}
         <View style={styles.levelHeader}>
           <Text style={[styles.levelTitle, { color: theme.primary }]}>{currentLevel.title}</Text>
@@ -818,5 +826,35 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFD700',
+  },
+  sideAvatarLeft: {
+    position: 'absolute',
+    left: 20,
+    top: '50%',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#fff',
+    overflow: 'hidden',
+    marginTop: -40,
+    zIndex: 50,
+  },
+  sideAvatarRight: {
+    position: 'absolute',
+    right: 20,
+    top: '50%',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#fff',
+    overflow: 'hidden',
+    marginTop: -40,
+    zIndex: 50,
+  },
+  sideAvatarImage: {
+    width: '100%',
+    height: '100%',
   },
 });
