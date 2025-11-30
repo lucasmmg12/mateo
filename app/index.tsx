@@ -2,11 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Platfor
 import { useState, useRef, useEffect, useMemo } from 'react';
 
 // Imágenes
-// Imágenes removed for Bolt compatibility
-// import ferrariImg from '../assets/images/mateoferrari.png';
-
-// Versión simplificada para depuración
-// Si esto funciona, el problema eran los assets o gradientes
+const background = require('../assets/images/background.jpg');
+const avatar = require('../assets/images/avatar.jpg');
 
 type GameScreen = 'welcome' | 'playing' | 'level_complete' | 'celebration';
 type Point = { x: number; y: number };
@@ -21,35 +18,100 @@ const LEVELS = [
     theme: {
       primary: '#0099FF', // Azul Héroe
       secondary: '#FFD700', // Dorado
-      background: '#E6F7FF',
+      background: 'rgba(230, 247, 255, 0.8)', // Semi-transparent
       accent: '#FF4444',
       icon: '🦸‍♂️'
     }
   },
   {
-    id: 'numbers',
-    title: 'NÚMEROS',
-    subtitle: '¡A toda velocidad!',
-    content: ['1', '2', '3', '4', '5'],
+    id: 'arbol',
+    title: 'ARBOL',
+    subtitle: '¡Completa las vocales!',
+    content: ['A', 'O'],
     theme: {
-      primary: '#FF4444', // Rojo Racing
-      secondary: '#000000', // Negro
-      background: '#FFF0F0',
-      accent: '#FFD700',
-      icon: '🏎️'
+      primary: '#4CAF50',
+      secondary: '#8D6E63',
+      background: 'rgba(241, 248, 233, 0.8)',
+      accent: '#FFEB3B',
+      icon: '🌳'
     }
   },
   {
-    id: 'vowels',
-    title: 'VOCALES',
-    subtitle: '¡Mundo Animal!',
-    content: ['A', 'E', 'I', 'O', 'U'],
+    id: 'papa',
+    title: 'PAPA',
+    subtitle: '¡Completa las vocales!',
+    content: ['A', 'A'],
     theme: {
-      primary: '#4CAF50', // Verde Selva
-      secondary: '#FF9800', // Naranja
-      background: '#F1F8E9',
-      accent: '#795548',
-      icon: '🦁'
+      primary: '#2196F3',
+      secondary: '#FFC107',
+      background: 'rgba(227, 242, 253, 0.8)',
+      accent: '#FF5722',
+      icon: '👨'
+    }
+  },
+  {
+    id: 'mama',
+    title: 'MAMA',
+    subtitle: '¡Completa las vocales!',
+    content: ['A', 'A'],
+    theme: {
+      primary: '#E91E63',
+      secondary: '#F8BBD0',
+      background: 'rgba(252, 228, 236, 0.8)',
+      accent: '#880E4F',
+      icon: '👩'
+    }
+  },
+  {
+    id: 'mateo_vowels',
+    title: 'MATEO',
+    subtitle: '¡Sus vocales!',
+    content: ['A', 'E', 'O'],
+    theme: {
+      primary: '#FF5722',
+      secondary: '#FFCCBC',
+      background: 'rgba(251, 233, 231, 0.8)',
+      accent: '#BF360C',
+      icon: '👦'
+    }
+  },
+  {
+    id: 'auto',
+    title: 'AUTO',
+    subtitle: '¡Completa las vocales!',
+    content: ['A', 'U', 'O'],
+    theme: {
+      primary: '#F44336',
+      secondary: '#B71C1C',
+      background: 'rgba(255, 235, 238, 0.8)',
+      accent: '#FFEB3B',
+      icon: '🚗'
+    }
+  },
+  {
+    id: 'moto',
+    title: 'MOTO',
+    subtitle: '¡Completa las vocales!',
+    content: ['O', 'O'],
+    theme: {
+      primary: '#607D8B',
+      secondary: '#455A64',
+      background: 'rgba(236, 239, 241, 0.8)',
+      accent: '#FF9800',
+      icon: '🏍️'
+    }
+  },
+  {
+    id: 'bici',
+    title: 'BICI',
+    subtitle: '¡Completa las vocales!',
+    content: ['I', 'I'],
+    theme: {
+      primary: '#9C27B0',
+      secondary: '#E1BEE7',
+      background: 'rgba(243, 229, 245, 0.8)',
+      accent: '#4A148C',
+      icon: '🚲'
     }
   }
 ];
@@ -84,25 +146,19 @@ export default function Index() {
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
-      // Iniciar nuevo trazo si quisiéramos manejar múltiples líneas, 
-      // por ahora solo acumulamos puntos para simplificar
+      // Iniciar nuevo trazo
     },
     onPanResponderMove: (evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-      // Obtener coordenadas relativas al área de dibujo
-      // Nota: En web a veces locationX/Y es inconsistente dependiendo del target, 
-      // usamos pageX/Y menos el offset del área si es posible, o simplificamos.
-      // Para esta demo simple, usaremos locationX/Y del evento nativo que suele funcionar bien en Views contenedores.
       const { locationX, locationY } = evt.nativeEvent;
-
       setDrawingPoints(prev => [...prev, { x: locationX, y: locationY }]);
     },
     onPanResponderRelease: () => {
       // Verificar si se ha dibujado suficiente
-      if (drawingPoints.length > 20) { // Umbral arbitrario de "esfuerzo"
+      if (drawingPoints.length > 20) {
         handleLetterComplete();
       }
     },
-  }), [drawingPoints]); // Dependencia necesaria para acceder al estado actualizado si fuera necesario, aunque aquí usamos setDrawingPoints funcional
+  }), [drawingPoints]);
 
   useEffect(() => {
     console.log("App mounted, screen:", screen);
@@ -185,12 +241,10 @@ export default function Index() {
   const playFanfare = () => {
     if (Platform.OS === 'web') {
       try {
-        // Intentar reproducir sonido de victoria
         const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3');
         audio.volume = 0.5;
         audio.play().catch(e => console.log("Audio play failed:", e));
 
-        // También usar síntesis de voz para felicitar
         if ('speechSynthesis' in window) {
           const utterance = new SpeechSynthesisUtterance(
             currentLevelIndex < LEVELS.length - 1
@@ -210,24 +264,18 @@ export default function Index() {
   const playBellSound = () => {
     if (Platform.OS === 'web') {
       try {
-        // Usar Web Audio API para sintetizar un sonido de campana confiable
-        // Esto evita problemas de carga de archivos externos o CORS
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         if (AudioContext) {
           const ctx = new AudioContext();
-
-          // Crear oscilador (el sonido)
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
 
           osc.connect(gain);
           gain.connect(ctx.destination);
 
-          // Configurar tono tipo "Campana"
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota La alta (Ding!)
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
 
-          // Configurar volumen (golpe fuerte y desvanecimiento)
           gain.gain.setValueAtTime(0.5, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
 
@@ -252,11 +300,10 @@ export default function Index() {
 
   const handleLetterComplete = () => {
     console.log("Letter complete");
-    playBellSound(); // Sonido de campana fuerte
-    speakCurrentLetter(); // Decir la letra
+    playBellSound();
+    speakCurrentLetter();
     triggerParticles();
 
-    // Animación de la letra
     Animated.sequence([
       Animated.spring(letterScaleAnim, {
         toValue: 1.5,
@@ -273,7 +320,6 @@ export default function Index() {
     newCompleted[currentLetterIndex] = true;
     setCompletedLetters(newCompleted);
 
-    // Animación del Icono cruzando
     ferrariAnim.setValue(-500);
     Animated.timing(ferrariAnim, {
       toValue: width + 500,
@@ -283,8 +329,7 @@ export default function Index() {
 
     if (currentLetterIndex === letters.length - 1) {
       setTimeout(() => {
-        playFanfare(); // Reproducir sonido
-        // Level Complete
+        playFanfare();
         if (currentLevelIndex < LEVELS.length - 1) {
           setScreen('level_complete');
         } else {
@@ -303,89 +348,94 @@ export default function Index() {
     }
   };
 
-  // Estilos dinámicos para web
   const isWeb = Platform.OS === 'web';
   const contentMaxWidth = 800;
 
-  if (screen === 'welcome') {
-    return (
-      <View style={[styles.container, { backgroundColor: '#0099FF' }]}>
-        <View style={styles.centerContent}>
-          <Animated.View style={{ transform: [{ translateY: heroAnim }] }}>
-            <View style={{ width: 200, height: 200, backgroundColor: '#FFD700', borderRadius: 100, marginBottom: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 8, borderColor: '#fff' }}>
-              <Text style={{ fontSize: 100 }}>🦸‍♂️</Text>
-            </View>
-          </Animated.View>
-
-          <Text style={styles.welcomeTitle}>¡Hola Mateo!</Text>
-          <Text style={styles.welcomeSubtitle}>¡Vamos a aprender jugando!</Text>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={startGame}
-            style={isWeb ? { cursor: 'pointer' } : {}}
-          >
-            <Animated.View style={[styles.startButton, { transform: [{ scale: buttonPulseAnim }] }]}>
-              <Text style={styles.startButtonText}>¡JUGAR!</Text>
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
+  // Render helpers
+  const renderBackground = (children: React.ReactNode, overlayColor: string = 'transparent') => (
+    <ImageBackground source={background} style={styles.container} resizeMode="cover">
+      <View style={[styles.overlay, { backgroundColor: overlayColor }]}>
+        {children}
       </View>
+    </ImageBackground>
+  );
+
+  if (screen === 'welcome') {
+    return renderBackground(
+      <View style={styles.centerContent}>
+        <Animated.View style={{ transform: [{ translateY: heroAnim }] }}>
+          <View style={styles.avatarContainer}>
+            <Image source={avatar} style={styles.avatarImage} resizeMode="cover" />
+          </View>
+        </Animated.View>
+
+        <Text style={styles.welcomeTitle}>¡Hola Mateo!</Text>
+        <Text style={styles.welcomeSubtitle}>¡Vamos a aprender jugando!</Text>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={startGame}
+          style={isWeb ? { cursor: 'pointer' } : {}}
+        >
+          <Animated.View style={[styles.startButton, { transform: [{ scale: buttonPulseAnim }] }]}>
+            <Text style={styles.startButtonText}>¡JUGAR!</Text>
+          </Animated.View>
+        </TouchableOpacity>
+      </View>,
+      'rgba(0, 153, 255, 0.7)' // Blue tint for welcome
     );
   }
 
   if (screen === 'level_complete') {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.primary }]}>
-        <View style={styles.centerContent}>
-          <Text style={{ fontSize: 120, marginBottom: 20 }}>{theme.icon}</Text>
-          <Text style={styles.celebrationTitle}>¡MUY BIEN!</Text>
-          <Text style={styles.celebrationSubtitle}>Completaste: {currentLevel.title}</Text>
+    return renderBackground(
+      <View style={styles.centerContent}>
+        <Text style={{ fontSize: 120, marginBottom: 20 }}>{theme.icon}</Text>
+        <Text style={styles.celebrationTitle}>¡MUY BIEN!</Text>
+        <Text style={styles.celebrationSubtitle}>Completaste: {currentLevel.title}</Text>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={nextLevel}
-            style={[styles.startButton, { marginTop: 40, backgroundColor: theme.secondary }]}
-          >
-            <Text style={[styles.startButtonText, { color: '#fff' }]}>SIGUIENTE NIVEL ▶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={nextLevel}
+          style={[styles.startButton, { marginTop: 40, backgroundColor: theme.secondary }]}
+        >
+          <Text style={[styles.startButtonText, { color: '#fff' }]}>SIGUIENTE NIVEL ▶</Text>
+        </TouchableOpacity>
+      </View>,
+      theme.primary ? `${theme.primary}B3` : 'rgba(0,0,0,0.5)' // Hex + Alpha (B3 = 70%)
     );
   }
 
   if (screen === 'celebration') {
-    return (
-      <View style={[styles.container, { backgroundColor: '#FFD700' }]}>
-        <View style={[styles.centerContent]}>
-          <Animated.View style={{
-            alignItems: 'center',
-            transform: [
-              { scale: celebrationAnim },
-              { translateY: Animated.multiply(celebrationAnim, -20) }
-            ]
-          }}>
-            <Text style={styles.celebrationTitle}>¡CAMPEÓN!</Text>
-            <Text style={styles.celebrationSubtitle}>¡Completaste TODO!</Text>
-          </Animated.View>
+    return renderBackground(
+      <View style={[styles.centerContent]}>
+        <Animated.View style={{
+          alignItems: 'center',
+          transform: [
+            { scale: celebrationAnim },
+            { translateY: Animated.multiply(celebrationAnim, -20) }
+          ]
+        }}>
+          <Text style={styles.celebrationTitle}>¡CAMPEÓN!</Text>
+          <Text style={styles.celebrationSubtitle}>¡Completaste TODO!</Text>
+        </Animated.View>
 
-          <View style={styles.heroFerrariContainer}>
-            <Text style={{ fontSize: 120 }}>🏆 🦸‍♂️ 🏎️</Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.repeatButton, isWeb && { cursor: 'pointer' }]}
-            onPress={startGame}
-          >
-            <Text style={styles.repeatButtonText}>Jugar Otra Vez</Text>
-          </TouchableOpacity>
+        <View style={styles.heroFerrariContainer}>
+          <Text style={{ fontSize: 120 }}>🏆 🦸‍♂️ 🏎️</Text>
         </View>
-      </View>
+
+        <TouchableOpacity
+          style={[styles.repeatButton, isWeb && { cursor: 'pointer' }]}
+          onPress={startGame}
+        >
+          <Text style={styles.repeatButtonText}>Jugar Otra Vez</Text>
+        </TouchableOpacity>
+      </View>,
+      'rgba(255, 215, 0, 0.8)' // Gold tint
     );
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+  return renderBackground(
+    <>
       {/* Partículas */}
       {particles.map(p => (
         <Animated.View
@@ -490,7 +540,8 @@ export default function Index() {
         </Animated.View>
 
       </View>
-    </View>
+    </>,
+    theme.background
   );
 }
 
@@ -500,10 +551,12 @@ const styles = StyleSheet.create({
     minHeight: Platform.OS === 'web' ? '100vh' : '100%',
     width: '100%',
   },
-  webContainer: {
+  overlay: {
     flex: 1,
-    height: '100vh',
-    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centerContent: {
     flex: 1,
@@ -522,6 +575,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginBottom: 10,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   welcomeSubtitle: {
     fontSize: 28,
@@ -529,6 +585,25 @@ const styles = StyleSheet.create({
     marginBottom: 50,
     fontWeight: '600',
     opacity: 0.95,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  avatarContainer: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 8,
+    borderColor: '#fff',
+    overflow: 'hidden',
+    backgroundColor: '#FFD700',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   startButton: {
     backgroundColor: '#FFD700',
@@ -555,12 +630,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
+    width: '100%',
   },
   levelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
     gap: 15,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   levelTitle: {
     fontSize: 40,
@@ -624,7 +704,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 500,
     height: 350,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 30,
     borderWidth: 6,
     borderStyle: 'dashed',
@@ -636,6 +716,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 15,
+    textShadowColor: 'rgba(255,255,255,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   traceGuideContainer: {
     position: 'absolute',
@@ -669,7 +752,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginBottom: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 5,
   },
@@ -679,6 +762,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   heroFerrariContainer: {
     alignItems: 'center',
