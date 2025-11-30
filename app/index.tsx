@@ -141,46 +141,11 @@ export default function Index() {
   const buttonPulseAnim = useRef(new Animated.Value(1)).current;
   const particleAnim = useRef(new Animated.Value(0)).current;
 
-  // Refs para el estado del dibujo y lógica para evitar recrear el PanResponder
+  // Refs para el estado del dibujo
   const drawingPointsRef = useRef<Point[]>([]);
-  const handleCompleteRef = useRef(handleLetterComplete);
 
   // Actualizar el ref de la función en cada render
-  useEffect(() => {
-    handleCompleteRef.current = handleLetterComplete;
-  }, [handleLetterComplete]);
-
-  // Configuración del PanResponder para dibujar
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (evt) => {
-      const { locationX, locationY } = evt.nativeEvent;
-      const startPoint = { x: locationX, y: locationY };
-      drawingPointsRef.current = [startPoint];
-      setDrawingPoints([startPoint]);
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      const { locationX, locationY } = evt.nativeEvent;
-      const newPoint = { x: locationX, y: locationY };
-
-      // Agregar punto al ref
-      drawingPointsRef.current.push(newPoint);
-
-      // Actualizar estado para renderizar (esto causará re-render, pero PanResponder no se recreará)
-      setDrawingPoints(prev => [...prev, newPoint]);
-    },
-    onPanResponderRelease: () => {
-      // Verificar si se ha dibujado suficiente usando el ref
-      if (drawingPointsRef.current.length > 20) {
-        handleCompleteRef.current();
-      }
-    },
-    onPanResponderTerminate: () => {
-      // Limpiar si el gesto es cancelado
-      // Opcional: setDrawingPoints([]);
-    }
-  }), []); // Sin dependencias para mantener la instancia estable durante el gesto
+  // (This useEffect and handleCompleteRef definition were duplicated, keeping only the one near the PanResponder)
 
   useEffect(() => {
     console.log("App mounted, screen:", screen);
@@ -369,6 +334,46 @@ export default function Index() {
       }, 2000);
     }
   };
+
+  // Refs para evitar dependencias circulares en PanResponder
+  const handleCompleteRef = useRef(handleLetterComplete);
+
+  // Actualizar el ref de la función en cada render
+  useEffect(() => {
+    handleCompleteRef.current = handleLetterComplete;
+  }, [handleLetterComplete]);
+
+  // Configuración del PanResponder para dibujar (definido aquí para tener acceso a handleLetterComplete)
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      const startPoint = { x: locationX, y: locationY };
+      drawingPointsRef.current = [startPoint];
+      setDrawingPoints([startPoint]);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      const newPoint = { x: locationX, y: locationY };
+
+      // Agregar punto al ref
+      drawingPointsRef.current.push(newPoint);
+
+      // Actualizar estado para renderizar
+      setDrawingPoints(prev => [...prev, newPoint]);
+    },
+    onPanResponderRelease: () => {
+      // Verificar si se ha dibujado suficiente usando el ref
+      if (drawingPointsRef.current.length > 20) {
+        handleCompleteRef.current();
+      }
+    },
+    onPanResponderTerminate: () => {
+      // Limpiar si el gesto es cancelado
+    }
+  }), []);
+
 
   const isWeb = Platform.OS === 'web';
   const contentMaxWidth = 800;
